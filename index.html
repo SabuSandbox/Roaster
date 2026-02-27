@@ -1,0 +1,335 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Roaster</title>
+
+    <link rel="apple-touch-icon" href="https://i.postimg.cc/JhqKN27c/apple-touch-icon.png">
+    <link rel="icon" type="image/png" href="https://i.postimg.cc/JhqKN27c/apple-touch-icon.png">
+    
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="theme-color" content="#000000">
+
+    <style>
+        :root {
+            --p-green: #32e875; --sa-orange: #ffa500; --hd-skyblue: #00e0ff;
+            --absent-red: #ff3b30; --bg: #000; --card: #111; --purple: #AD00FF;
+            --date-yellow: #ffff00; --holiday-blue: #5856d6;
+        }
+
+        body {
+            background: var(--bg); color: #fff;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            margin: 0; display: flex; flex-direction: column; align-items: center;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        /* --- AUTH SCREEN --- */
+        #authGate { display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; width: 100%; background: #000; text-align: center; }
+        .login-box { background: #111; padding: 30px; border-radius: 15px; border: 1px solid #222; width: 280px; }
+        .token-input { width: 100%; padding: 12px; background: #000; border: 1px solid #333; color: #fff; border-radius: 8px; margin-bottom: 15px; text-align: center; font-size: 18px; letter-spacing: 2px; }
+        
+        /* --- MAIN APP --- */
+        .container { width: 95%; max-width: 400px; padding: 10px 0 60px 0; position: relative; display: none; }
+        
+        .user-profile {
+            position: absolute; top: 10px; right: 0; text-align: right; font-size: 10px; color: #777;
+            cursor: pointer; padding: 5px; background: #111; border-radius: 8px; border: 1px solid #222;
+        }
+        .user-profile b { color: var(--hd-skyblue); display: block; font-size: 11px; }
+
+        .app-logo { width: 55px; height: 55px; margin: 15px auto 5px auto; display: block; border-radius: 12px; box-shadow: 0 0 15px rgba(0, 224, 255, 0.2); }
+
+        h1 { font-size: 32px; margin: 5px 0 10px 0; letter-spacing: 4px; font-weight: 900; background: linear-gradient(90deg, var(--p-green), var(--hd-skyblue)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; text-align: center; }
+
+        .stats-dashboard { display: flex; justify-content: space-around; background: var(--card); padding: 10px; border-radius: 12px; margin-bottom: 10px; border: 1px solid #222; }
+        .stat-item { flex: 1; text-align: center; border-right: 1px solid #222; }
+        .stat-item:last-child { border-right: none; }
+        .stat-val { font-size: 18px; font-weight: 700; color: #fff; display: block; }
+        .stat-lbl { font-size: 8px; font-weight: 800; text-transform: uppercase; margin-top: 2px; display: block; }
+
+        .main-card { background: var(--card); padding: 15px; border-radius: 15px; margin-bottom: 15px; border: 1px solid #222; text-align: center; }
+        .punch-btn { width: 70%; padding: 12px; border-radius: 8px; font-size: 18px; font-weight: 900; border: 2px solid var(--hd-skyblue); color: var(--hd-skyblue); background: none; cursor: pointer; text-transform: uppercase; }
+
+        .calendar-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; background: var(--card); padding: 10px; border-radius: 15px; border: 1px solid #222; }
+        .day { background: #181818; border-radius: 6px; font-size: 10px; display: flex; flex-direction: column; align-items: center; justify-content: flex-start; padding: 5px 2px; position: relative; cursor: pointer; min-height: 55px; color: #fff; }
+        .day.today { border: 1px solid var(--hd-skyblue); }
+        .day.highlight-leave { background: var(--date-yellow) !important; color: #000 !important; font-weight: 900; }
+        .day-hours { font-size: 7px; color: #aaa; margin-top: 2px; }
+        .status-label { font-size: 8px; font-weight: 900; margin-top: auto; padding-top: 2px; }
+
+        .bg-P { color: var(--p-green); } .bg-HD { color: var(--hd-skyblue); } 
+        .bg-SA { color: var(--sa-orange); } .bg-HO { color: var(--holiday-blue); } .bg-A { color: var(--absent-red); }
+
+        .purple-dot { position: absolute; top: 3px; left: 3px; width: 4px; height: 4px; background: var(--purple); border-radius: 50%; }
+        .manual-indicator { font-size: 7px; color: var(--sa-orange); font-weight: bold; margin-left: 2px; }
+
+        .balance-footer { position: absolute; bottom: 8px; left: 50%; transform: translateX(-50%); font-size: 11px; color: #eee; font-weight: 700; background: rgba(40, 40, 40, 0.9); padding: 6px 15px; border-radius: 20px; display: flex; align-items: center; gap: 10px; border: 1px solid #333; white-space: nowrap; }
+
+        .export-btn { width: 100%; padding: 12px; border-radius: 8px; font-size: 12px; font-weight: 800; background: #222; border: 1px solid #444; color: #fff; cursor: pointer; text-transform: uppercase; margin-top: 15px; }
+
+        .modal { display: none; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background: #151515; padding: 20px; border-radius: 12px; width: 85%; z-index: 10000; border: 1px solid #333; }
+        .overlay { display: none; position: fixed; top:0; left:0; width:100%; height:100%; background: rgba(0,0,0,0.95); z-index: 9999; }
+        .reg-option { display: block; width: 100%; padding: 10px; margin: 5px 0; background: #222; border: 1px solid #333; color: #fff; border-radius: 8px; text-align: left; font-size: 11px; font-weight: 600; text-transform: uppercase; cursor: pointer; }
+        .time-picker { padding: 8px; background: #000; border: 1px solid #444; color: #fff; border-radius: 5px; width: 100px; text-align: center; }
+    </style>
+</head>
+<body>
+
+<div id="authGate">
+    <div class="login-box">
+        <h1 style="color:var(--hd-skyblue); margin-top:0; letter-spacing: 4px;">ROASTER</h1>
+        <p style="color:#777; font-size:11px; margin-bottom:20px;">ACCESS TOKEN REQUIRED</p>
+        <input type="text" id="tokenInput" placeholder="XXXXXX" class="token-input" style="text-transform: uppercase;">
+        <button class="punch-btn" onclick="localLogin()">Enter App</button>
+    </div>
+</div>
+
+<div class="container" id="appContent">
+    <div class="user-profile" onclick="editProfile()">
+        <span id="pCode">Emp Code</span>
+        <b id="pName">User Name</b>
+    </div>
+
+    <img src="https://i.postimg.cc/JhqKN27c/apple-touch-icon.png" class="app-logo">
+    <h1>ROASTER</h1>
+
+    <div class="stats-dashboard">
+        <div class="stat-item"><span class="stat-val" id="valP">0</span><span class="stat-lbl">Present</span></div>
+        <div class="stat-item"><span class="stat-val" id="valHD">0</span><span class="stat-lbl">Half Day</span></div>
+        <div class="stat-item"><span class="stat-val" id="valSA">0</span><span class="stat-lbl">Short Att.</span></div>
+    </div>
+
+    <div class="main-card">
+        <div id="idleUI">
+            <button class="punch-btn" onclick="punchIn()">Punch In</button>
+            <div style="color:var(--sa-orange); font-size:10px; margin-top:10px; text-decoration:underline; cursor:pointer;" onclick="toggleManual()">Manual Entry (In/Out)</div>
+            
+            <div id="mBox" style="display:none; margin-top:15px; border-top: 1px solid #222; padding-top: 15px;">
+                <div style="display: flex; justify-content: center; gap: 10px; margin-bottom: 10px;">
+                    <div><label style="font-size: 8px; color: #777;">IN</label><br><input type="time" id="mTimeIn" class="time-picker"></div>
+                    <div><label style="font-size: 8px; color: #777;">OUT</label><br><input type="time" id="mTimeOut" class="time-picker"></div>
+                </div>
+                <button onclick="saveManualEntry()" style="background:var(--hd-skyblue); border:none; padding:8px 15px; border-radius:8px; font-weight:bold; color:#000; font-size: 11px;">SAVE LOG</button>
+            </div>
+        </div>
+        
+        <div id="activeUI" style="display:none;">
+            <div id="timer" style="font-size: 36px; color: var(--hd-skyblue); font-weight:900;">08:30:00</div>
+            <button onclick="finishShift()" style="margin-top:10px; background:#222; color:white; border:1px solid #444; padding:8px 20px; border-radius:20px; font-weight:bold;">PUNCH OUT</button>
+        </div>
+    </div>
+
+    <div class="calendar-grid" id="calendarGrid"></div>
+
+    <div class="balance-footer">
+        <span id="balanceText">SL: 0 | CL: 0 | SAR: 0</span>
+        <span onclick="editBalances()" style="color:var(--hd-skyblue); cursor:pointer;">✎</span>
+    </div>
+
+    <button class="export-btn" onclick="exportReport()">Extract Attendance Report</button>
+</div>
+
+<div class="overlay" id="overlay" onclick="closeModals()"></div>
+<div class="modal" id="regModal">
+    <div id="selDate" style="font-size:10px; color:#777; margin-bottom:10px;"></div>
+    <button class="reg-option" onclick="applyReg('P')">P - Mark Present</button>
+    <button class="reg-option" onclick="applySAR()" id="sarBtn">SAR - Regularize</button>
+    <button class="reg-option" onclick="applyReg('SL')">SL - Sick Leave</button>
+    <button class="reg-option" onclick="applyReg('CL')">CL - Casual Leave</button>
+    <button class="reg-option" onclick="applyReg('DISCARD')" style="color:var(--absent-red)">Discard Log</button>
+</div>
+
+<script>
+    // --- MANAGE YOUR INVITE TOKENS HERE ---
+    const VALID_TOKENS = {
+        "RP77": "Administrator",
+        "WORKER1": "User One"
+    };
+
+    let logs = JSON.parse(localStorage.getItem('roaster_logs') || '{}');
+    let balances = JSON.parse(localStorage.getItem('roaster_balances') || '{"SL":7, "CL":7, "SAR":2}');
+    let profile = JSON.parse(localStorage.getItem('roaster_profile') || '{"name":"User", "code":"001"}');
+    let activeIn = localStorage.getItem('roaster_activeIn');
+    let selectedDateKey = "";
+    const SHIFT_VAL = 8.5 * 3600000;
+
+    window.onload = () => { if (localStorage.getItem('isLoggedIn') === 'true') showApp(); };
+
+    function localLogin() {
+        const input = document.getElementById('tokenInput').value.toUpperCase().trim();
+        if (VALID_TOKENS[input]) {
+            localStorage.setItem('isLoggedIn', 'true');
+            profile.name = VALID_TOKENS[input];
+            localStorage.setItem('roaster_profile', JSON.stringify(profile));
+            showApp();
+        } else { alert("Invalid Token"); }
+    }
+
+    function showApp() {
+        document.getElementById('authGate').style.display = 'none';
+        document.getElementById('appContent').style.display = 'block';
+        initApp();
+    }
+
+    function initApp() {
+        document.getElementById('pName').innerText = profile.name;
+        document.getElementById('pCode').innerText = profile.code;
+        renderCalendar(); updateStats();
+        if (activeIn) startTimer();
+    }
+
+    function toggleManual() {
+        const box = document.getElementById('mBox');
+        box.style.display = box.style.display === 'none' ? 'block' : 'none';
+    }
+
+    function saveManualEntry() {
+        const valIn = document.getElementById('mTimeIn').value;
+        const valOut = document.getElementById('mTimeOut').value;
+        if (!valIn) return alert("Select In Time");
+
+        const d = new Date();
+        const [hIn, mIn] = valIn.split(':');
+        d.setHours(hIn, mIn, 0, 0);
+        const startTime = d.getTime();
+
+        if (valOut) {
+            const [hOut, mOut] = valOut.split(':');
+            const dOut = new Date(); dOut.setHours(hOut, mOut, 0, 0);
+            const endTime = dOut.getTime();
+            if (endTime <= startTime) return alert("Out must be after In");
+            
+            const dur = endTime - startTime;
+            logs[d.toDateString()] = {
+                status: dur >= 30600000 ? 'P' : (dur >= 22500000 ? 'SA' : 'HD'),
+                punchIn: startTime, punchOut: endTime, isManual: true
+            };
+            localStorage.setItem('roaster_logs', JSON.stringify(logs));
+            location.reload();
+        } else {
+            localStorage.setItem('roaster_activeIn', startTime);
+            localStorage.setItem('roaster_isManual', 'true');
+            location.reload();
+        }
+    }
+
+    function punchIn() {
+        localStorage.setItem('roaster_activeIn', Date.now());
+        localStorage.setItem('roaster_isManual', 'false');
+        location.reload();
+    }
+
+    function startTimer() {
+        document.getElementById('idleUI').style.display = 'none';
+        document.getElementById('activeUI').style.display = 'block';
+        const target = parseInt(activeIn) + SHIFT_VAL;
+        setInterval(() => {
+            const diff = target - Date.now();
+            if (diff <= 0) { finishShift(); return; }
+            let h = Math.floor(diff/3600000), m = Math.floor((diff%3600000)/60000), s = Math.floor((diff%60000)/1000);
+            document.getElementById('timer').innerText = `${h.toString().padStart(2,'0')}:${m.toString().padStart(2,'0')}:${s.toString().padStart(2,'0')}`;
+        }, 1000);
+    }
+
+    function finishShift() {
+        let now = Date.now(), start = parseInt(activeIn), dur = now - start;
+        logs[new Date(start).toDateString()] = { 
+            status: dur >= 30600000 ? 'P' : (dur >= 22500000 ? 'SA' : 'HD'),
+            punchIn: start, punchOut: now, isManual: localStorage.getItem('roaster_isManual') === 'true'
+        };
+        localStorage.setItem('roaster_logs', JSON.stringify(logs));
+        localStorage.removeItem('roaster_activeIn');
+        location.reload();
+    }
+
+    function renderCalendar() {
+        const grid = document.getElementById('calendarGrid'); grid.innerHTML = '';
+        const now = new Date(), m = now.getMonth(), y = now.getFullYear();
+        const first = new Date(y, m, 1).getDay(), total = new Date(y, m + 1, 0).getDate();
+        
+        ['S','M','T','W','T','F','S'].forEach(d => grid.innerHTML += `<div style="font-size:9px; color:#444; text-align:center;">${d}</div>`);
+        for (let i = 0; i < first; i++) grid.innerHTML += `<div></div>`;
+
+        for (let d = 1; d <= total; d++) {
+            let date = new Date(y, m, d), key = date.toDateString(), log = logs[key];
+            let status = log ? log.status : (date.getDay() % 6 === 0 ? 'WO' : (date < new Date().setHours(0,0,0,0) ? 'A' : ''));
+            
+            let el = document.createElement('div');
+            el.className = `day ${key === new Date().toDateString() ? 'today' : ''} ${['SL','CL'].includes(status)?'highlight-leave':''}`;
+            el.onclick = () => { selectedDateKey = key; document.getElementById('selDate').innerText=key; document.getElementById('overlay').style.display='block'; document.getElementById('regModal').style.display='block'; };
+            
+            let worked = log ? Math.floor((log.punchOut - log.punchIn)/3600000)+'h' : "";
+            el.innerHTML = `
+                ${log?.isManual || ['P','SAR','SL','CL'].includes(status) ? '<div class="purple-dot"></div>' : ''}
+                <span>${d}${log?.isManual ? '<span class="manual-indicator">M</span>' : ''}</span>
+                <span class="day-hours">${worked}</span>
+                <span class="status-label bg-${status}">${status}</span>
+            `;
+            grid.appendChild(el);
+        }
+    }
+
+    function refund(log) {
+        if (!log) return;
+        if (log.status === 'SL') balances.SL++;
+        if (log.status === 'CL') balances.CL++;
+        if (log.sarUsed) { balances.SAR++; log.sarUsed = false; }
+    }
+
+    function applyReg(type) {
+        let log = logs[selectedDateKey];
+        if (type === 'DISCARD') { refund(log); delete logs[selectedDateKey]; } 
+        else {
+            refund(log);
+            if (['SL','CL'].includes(type)) { if (balances[type] <= 0) return alert("No Balance"); balances[type]--; }
+            logs[selectedDateKey] = { status: type };
+        }
+        save();
+    }
+
+    function applySAR() {
+        if (balances.SAR <= 0) return alert("No SAR balance");
+        refund(logs[selectedDateKey]);
+        balances.SAR--;
+        logs[selectedDateKey] = { status: 'P', sarUsed: true };
+        save();
+    }
+
+    function updateStats() {
+        let s = {P:0,HD:0,SA:0}, now = new Date(), m = now.getMonth();
+        Object.keys(logs).forEach(k => { if(new Date(k).getMonth() === m && s.hasOwnProperty(logs[k].status)) s[logs[k].status]++; });
+        document.getElementById('valP').innerText = s.P; document.getElementById('valHD').innerText = s.HD; document.getElementById('valSA').innerText = s.SA;
+        document.getElementById('balanceText').innerText = `SL: ${balances.SL} | CL: ${balances.CL} | SAR: ${balances.SAR}`;
+    }
+
+    function save() {
+        localStorage.setItem('roaster_logs', JSON.stringify(logs));
+        localStorage.setItem('roaster_balances', JSON.stringify(balances));
+        location.reload();
+    }
+
+    function exportReport() {
+        let csv = "Date,Punch In,Punch Out,Status\n";
+        Object.keys(logs).forEach(k => { let l=logs[k]; csv += `${k},${l.punchIn ? new Date(l.punchIn).toLocaleTimeString() : '--'},${l.punchOut ? new Date(l.punchOut).toLocaleTimeString() : '--'},${l.status}\n`; });
+        let b = new Blob([csv], {type:'text/csv'}), a = document.createElement('a'); a.href = URL.createObjectURL(b); a.download = `Attendance_${profile.name}.csv`; a.click();
+    }
+
+    function editBalances() { 
+        let sl = prompt("SL:", balances.SL), cl = prompt("CL:", balances.CL), sar = prompt("SAR:", balances.SAR);
+        if(sl!==null) balances.SL=parseInt(sl); if(cl!==null) balances.CL=parseInt(cl); if(sar!==null) balances.SAR=parseInt(sar);
+        save();
+    }
+    
+    function editProfile() {
+        let n = prompt("Name:", profile.name), c = prompt("Code:", profile.code);
+        if(n) profile.name = n; if(c) profile.code = c;
+        localStorage.setItem('roaster_profile', JSON.stringify(profile)); location.reload();
+    }
+
+    function closeModals() { document.querySelectorAll('.modal, .overlay').forEach(e => e.style.display = 'none'); }
+</script>
+</body>
+</html>
