@@ -24,13 +24,13 @@
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
             margin: 0; display: flex; flex-direction: column; align-items: center;
             -webkit-tap-highlight-color: transparent;
-            height: 100vh;
+            min-height: 100vh;
         }
 
         /* --- AUTH SCREEN STYLES --- */
         #authScreen {
-            display: flex; flex-direction: column; align-items: center; justify-content: center;
-            height: 100vh; width: 100%; background: #000; position: fixed; z-index: 99999;
+            display: none; flex-direction: column; align-items: center; justify-content: center;
+            height: 100vh; width: 100%; background: #000; position: fixed; top: 0; left: 0; z-index: 99999;
         }
         .auth-input {
             background: #111; border: 1px solid #333; color: var(--hd-skyblue);
@@ -54,9 +54,9 @@
         .user-profile b { color: var(--hd-skyblue); display: block; font-size: 11px; }
 
         .app-logo {
-            width: 55px; height: 55px;
+            width: 60px; height: 60px;
             margin: 15px auto 5px auto;
-            display: block; border-radius: 12px;
+            display: block; border-radius: 14px;
             box-shadow: 0 0 15px rgba(0, 224, 255, 0.2);
         }
 
@@ -124,17 +124,14 @@
 </head>
 <body>
 
-<div id="authScreen" style="display: none;">
-    <img src="https://i.postimg.cc/JhqKN27c/apple-touch-icon.png" style="width: 70px; border-radius: 15px; margin-bottom: 15px; box-shadow: 0 0 20px rgba(0, 224, 255, 0.3);">
+<div id="authScreen">
+    <img src="https://i.postimg.cc/xTsM06TL/Roaster.png" style="width: 80px; border-radius: 18px; margin-bottom: 15px; box-shadow: 0 0 20px rgba(0, 224, 255, 0.3);">
     <h1 style="font-size: 24px; color: #fff; letter-spacing: 5px; margin-bottom: 5px;">ROASTER</h1>
     <p style="color: #555; font-size: 10px; margin-bottom: 25px; font-weight: 800; text-transform: uppercase;">Activation Required</p>
     
     <input type="text" id="accessKeyInput" placeholder="ENTER TOKEN" class="auth-input">
     <button onclick="verifyKey()" class="auth-btn">Activate</button>
 </div>
-
-<div class="container" id="appContent" style="display: block;">
-    </div>
 
 <div class="container" id="appContent" style="display:none;">
     <div class="user-profile" onclick="editProfile()">
@@ -162,7 +159,7 @@
         </div>
         <div id="activeUI" style="display:none;">
             <div style="font-size:10px; text-transform:uppercase; color:#777; margin-bottom:5px;">Shift in Progress</div>
-            <div id="timer" style="font-size: 36px; color: var(--hd-skyblue); font-weight:900;">08:30:00</div>
+            <div id="timer" style="font-size: 36px; color: var(--hd-skyblue); font-weight:900;">00:00:00</div>
             <button onclick="finishShift()" style="margin-top:10px; background:#222; color:white; border:1px solid #444; padding:8px 20px; border-radius:20px; font-weight:bold;">PUNCH OUT</button>
         </div>
     </div>
@@ -189,7 +186,7 @@
     <input type="text" id="editCode" placeholder="Employee Code" class="time-picker" style="margin-bottom:20px;">
     
     <button class="reg-option" style="background:var(--p-green); color:#000;" onclick="saveProfile()">Save Profile</button>
-    <button class="reg-option" style="color:var(--absent-red); border-color: #333;" onclick="lockApp()">Logout & Lock App</button>
+    <button class="reg-option" style="color:var(--absent-red); border-color: #333;" onclick="lockApp()">Logout & Deactivate</button>
     <button class="reg-option" onclick="closeModals()">Cancel</button>
 </div>
 
@@ -212,8 +209,8 @@
 </div>
 
 <script>
-    /* --- TOKEN CONFIGURATION (ADD NEW KEYS HERE) --- */
-    const VALID_KEYS = ["0473HO", "OFFICE-99", "STAFF-PRO"];
+    /* --- TOKEN CONFIGURATION --- */
+    const VALID_KEYS = ["0473HO", "ROASTER-PRO", "OFFICE-KEY"];
 
     let logs = JSON.parse(localStorage.getItem('roaster_logs') || '{}');
     let balances = JSON.parse(localStorage.getItem('roaster_balances') || '{"SL":7, "CL":7, "SAR":2}');
@@ -226,26 +223,23 @@
     const SAR_BONUS_MS = 2 * 60 * 60 * 1000;
 
     window.onload = () => {
-    const isAuth = localStorage.getItem('roaster_auth_status');
-
-    if (isAuth === 'true') {
-        // Stay on the app
-        document.getElementById('authScreen').style.display = 'none';
-        document.getElementById('appContent').style.display = 'block';
-        initializeApp();
-    } else {
-        // Force the login screen
-        document.getElementById('authScreen').style.display = 'flex';
-        document.getElementById('appContent').style.display = 'none';
-    }
-};
-
+        const isAuth = localStorage.getItem('roaster_auth_status');
+        if (isAuth === 'true') {
+            document.getElementById('authScreen').style.display = 'none';
+            document.getElementById('appContent').style.display = 'block';
+            initializeApp();
+        } else {
+            document.getElementById('authScreen').style.display = 'flex';
+            document.getElementById('appContent').style.display = 'none';
+        }
+    };
 
     function verifyKey() {
         const val = document.getElementById('accessKeyInput').value.trim();
         if (VALID_KEYS.includes(val)) {
             localStorage.setItem('roaster_auth_status', 'true');
-            unlockApp();
+            document.getElementById('authScreen').style.display = 'none';
+            document.getElementById('appContent').style.display = 'block';
             initializeApp();
         } else {
             const input = document.getElementById('accessKeyInput');
@@ -253,11 +247,6 @@
             input.value = "";
             input.placeholder = "INVALID TOKEN";
         }
-    }
-
-    function unlockApp() {
-        document.getElementById('authScreen').style.display = 'none';
-        document.getElementById('appContent').style.display = 'block';
     }
 
     function lockApp() {
