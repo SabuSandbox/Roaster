@@ -89,7 +89,7 @@
 
         .day-num { font-weight: 800; font-size: 11px; margin-bottom: 2px; }
         .day-hours { font-size: 7px; color: #aaa; font-weight: bold; line-height: 1; text-align: center; }
-        .tag-bonus { color: var(--hd-skyblue); display: block; margin-top: 1px; }
+        .tag-bonus { color: var(--hd-skyblue); display: block; margin-top: 1px; font-size: 6px; }
 
         .bg-P { color: var(--p-green); } .bg-HD { color: var(--hd-skyblue); } 
         .bg-SA { color: var(--sa-orange); } .bg-HO { color: var(--holiday-blue); }
@@ -200,6 +200,7 @@
     <div id="holidayDisplay" style="background:#000; padding:10px; border-radius:8px; margin-bottom:10px; font-size:11px; border:1px dashed #444; display:none;"></div>
     <button class="reg-option" onclick="applyReg('P')">P - Mark Present</button>
     <button class="reg-option" onclick="applySAR()" id="sarBtn">SAR - Regularize</button>
+    <button class="reg-option" style="color:var(--p-green); border-color:var(--p-green);" onclick="addBonusHours()">+ Add Company Bonus Hours</button>
     <button class="reg-option" onclick="applyReg('OD')">OD - On Duty</button>
     <button class="reg-option" onclick="applyReg('SL')">SL - Sick Leave</button>
     <button class="reg-option" onclick="applyReg('CL')">CL - Casual Leave</button>
@@ -322,16 +323,27 @@
         }, 1000);
     }
 
+    // Helper for Status Logic
+    function calculateStatus(durationMs, bonusMs = 0) {
+        const totalEffectiveMs = durationMs + (bonusMs || 0);
+        if (totalEffectiveMs >= (SHIFT_TIME_MS - 2000)) return 'P';
+        if (totalEffectiveMs >= (6.25 * 3600000)) return 'SA';
+        return 'HD';
+    }
+
     function finishShift() {
         let now = new Date().getTime();
         let startTime = parseInt(activeIn);
         let workedMs = now - startTime;
         let punchDate = new Date(startTime);
-        let status = workedMs >= (SHIFT_TIME_MS - 2000) ? 'P' : (workedMs >= (6.25 * 3600000) ? 'SA' : 'HD');
+        
+        let status = calculateStatus(workedMs, 0);
+
         logs[punchDate.toDateString()] = { 
             status, punchIn: startTime, punchOut: now, 
             isManual: localStorage.getItem('roaster_isManual') === 'true', 
-            isLate: punchDate.getHours() >= 10 && (punchDate.getHours() > 10 || punchDate.getMinutes() > 0)
+            isLate: punchDate.getHours() >= 10 && (punchDate.getHours() > 10 || punchDate.getMinutes() > 0),
+            bonusMs: 0
         };
         localStorage.setItem('roaster_logs', JSON.stringify(logs));
         localStorage.removeItem('roaster_activeIn');
@@ -360,7 +372,10 @@
             if(status === 'HO') dayEl.classList.add('holiday-bg');
             
             let worked = (log?.punchIn && log?.punchOut) ? formatDur(log.punchOut - log.punchIn) : "";
+            
+            // Render Tags (SAR, Bonus, Leaves)
             let tag = log?.sarUsed ? "+SAR" : (status==='SL'?"+SL":status==='CL'?"+CL":"");
+            if (log?.bonusMs) tag += ` +${log.bonusMs / 3600000}h Bns`;
 
             dayEl.onclick = () => { selectedDateKey = key; openReg(); };
             dayEl.innerHTML = `
@@ -419,14 +434,49 @@
         const d = new Date(selectedDateKey);
         const pIn = new Date(d).setHours(inV.split(':')[0], inV.split(':')[1]);
         const pOut = new Date(d).setHours(outV.split(':')[0], outV.split(':')[1]);
-        logs[selectedDateKey] = { ...log, punchIn: pIn, punchOut: pOut, isManual: true, status: (pOut-pIn >= SHIFT_TIME_MS-2000)?'P':(pOut-pIn>=6.25*3600000?'SA':'HD') };
+        
+        const workedMs = pOut - pIn;
+        const bMs = log.bonusMs || 0;
+
+        logs[selectedDateKey] = { 
+            ...log, 
+            punchIn: pIn, 
+            punchOut: pOut, 
+            isManual: true, 
+            status: calculateStatus(workedMs, bMs) 
+        };
         save();
+    }
+
+    function addBonusHours() {
+        const currentBonus = (logs[selectedDateKey]?.bonusMs || 0) / 3600000;
+        const hours = prompt("Enter Bonus Hours provided by company (e.g., 2 or 1.5):", currentBonus);
+        
+        if (hours !== null) {
+            let log = logs[selectedDateKey] || { 
+                punchIn: new Date(selectedDateKey).setHours(9,0,0,0), 
+                punchOut: new Date(selectedDateKey).setHours(17,30,0,0),
+                isManual: true 
+            };
+            
+            const bonusMs = parseFloat(hours) * 3600000;
+            log.bonusMs = bonusMs;
+            
+            const workedMs = (log.punchOut && log.punchIn) ? (log.punchOut - log.punchIn) : 0;
+            log.status = calculateStatus(workedMs, bonusMs);
+            
+            logs[selectedDateKey] = log;
+            save();
+        }
     }
 
     function applySAR() {
         const log = logs[selectedDateKey];
         if(!log?.punchOut || (balances.SAR||0) <= 0) return;
-        if((log.punchOut - log.punchIn + SAR_BONUS_MS) >= SHIFT_TIME_MS - 2000) {
+        const workedMs = log.punchOut - log.punchIn;
+        const bMs = log.bonusMs || 0;
+
+        if((workedMs + bMs + SAR_BONUS_MS) >= SHIFT_TIME_MS - 2000) {
             refund(log); balances.SAR--;
             logs[selectedDateKey].status = 'P'; logs[selectedDateKey].sarUsed = true;
             save();
@@ -465,16 +515,23 @@
         const now = new Date(), m = now.getMonth(), y = now.getFullYear();
         const days = new Date(y, m + 1, 0).getDate();
         let csv = `Employee: ${profile.name}, Code: ${profile.code}, Report: Monthly Attendance\n`;
-        csv += "Date,Punch In,Punch Out,By,Status,Regularization,Holiday,Remarks\n";
+        csv += "Date,Punch In,Punch Out,Worked (Hrs),Bonus (Hrs),Status,Regularization,Holiday,Remarks\n";
+        
         for (let i = 1; i <= days; i++) {
             const dStr = new Date(y, m, i).toDateString();
             const log = logs[dStr];
             const isHol = globalHolidays[dStr] || (log?.status === 'HO' ? log.remarks : "");
+            
+            const workedMs = (log?.punchIn && log?.punchOut) ? (log.punchOut - log.punchIn) : 0;
+            const bonusHrs = log?.bonusMs ? (log.bonusMs / 3600000).toFixed(1) : "0";
+            const workedHrs = (workedMs / 3600000).toFixed(2);
+
             const row = [
                 i,
                 log?.punchIn ? new Date(log.punchIn).toLocaleTimeString([], {hour12:false, hour:'2-digit', minute:'2-digit'}) : "--",
                 log?.punchOut ? new Date(log.punchOut).toLocaleTimeString([], {hour12:false, hour:'2-digit', minute:'2-digit'}) : "--",
-                log?.isManual ? "M" : (log?.punchIn ? "B" : "--"),
+                log?.punchIn ? workedHrs : "0.00",
+                bonusHrs,
                 log?.status || (isHol ? "HO" : "A"),
                 log?.sarUsed ? "SAR" : (log?.status==='SL'?'SL':log?.status==='CL'?'CL':""),
                 isHol || "--",
