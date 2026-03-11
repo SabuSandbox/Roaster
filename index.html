@@ -202,15 +202,20 @@
     <button class="reg-option" onclick="applySAR()" id="sarBtn">SAR - Regularize</button>
     <button class="reg-option" style="color:var(--p-green); border-color:var(--p-green);" onclick="addBonusHours()">+ Add Company Bonus Hours</button>
     <button class="reg-option" onclick="applyReg('OD')">OD - On Duty</button>
-    <button class="reg-option" onclick="applyReg('SL')">SL - Sick Leave</button>
-    <button class="reg-option" onclick="applyReg('CL')">CL - Casual Leave</button>
+    <div style="display:grid; grid-template-columns: 1fr 1fr; gap:5px;">
+        <button class="reg-option" onclick="applyReg('SL')">SL (Full)</button>
+        <button class="reg-option" onclick="applyReg('HALF-SL')">SL (Half)</button>
+    </div>
+    <div style="display:grid; grid-template-columns: 1fr 1fr; gap:5px;">
+        <button class="reg-option" onclick="applyReg('CL')">CL (Full)</button>
+        <button class="reg-option" onclick="applyReg('HALF-CL')">CL (Half)</button>
+    </div>
     <button class="reg-option" onclick="applyHolidayReg()">HO - Holiday</button>
     <button class="reg-option" onclick="addRemarks()" style="color:var(--sa-orange)">Add Remarks</button>
     <button class="reg-option" style="color:var(--absent-red);" onclick="applyReg('DISCARD')">Discard Log</button>
 </div>
 
 <script>
-    /* --- TOKEN CONFIGURATION --- */
     const VALID_KEYS = ["0473HO", "0447HO", "0999HO"];
 
     let logs = JSON.parse(localStorage.getItem('roaster_logs') || '{}');
@@ -231,7 +236,6 @@
             initializeApp();
         } else {
             document.getElementById('authScreen').style.display = 'flex';
-            document.getElementById('appContent').style.display = 'none';
         }
     };
 
@@ -239,9 +243,7 @@
         const val = document.getElementById('accessKeyInput').value.trim();
         if (VALID_KEYS.includes(val)) {
             localStorage.setItem('roaster_auth_status', 'true');
-            document.getElementById('authScreen').style.display = 'none';
-            document.getElementById('appContent').style.display = 'block';
-            initializeApp();
+            location.reload();
         } else {
             const input = document.getElementById('accessKeyInput');
             input.style.border = "1px solid var(--absent-red)";
@@ -323,7 +325,6 @@
         }, 1000);
     }
 
-    // Helper for Status Logic
     function calculateStatus(durationMs, bonusMs = 0) {
         const totalEffectiveMs = durationMs + (bonusMs || 0);
         if (totalEffectiveMs >= (SHIFT_TIME_MS - 2000)) return 'P';
@@ -336,9 +337,7 @@
         let startTime = parseInt(activeIn);
         let workedMs = now - startTime;
         let punchDate = new Date(startTime);
-        
         let status = calculateStatus(workedMs, 0);
-
         logs[punchDate.toDateString()] = { 
             status, punchIn: startTime, punchOut: now, 
             isManual: localStorage.getItem('roaster_isManual') === 'true', 
@@ -368,18 +367,23 @@
 
             let dayEl = document.createElement('div');
             dayEl.className = `day ${key === new Date().toDateString() ? 'today' : ''}`;
+            
+            // Highlight full leaves
             if(status === 'SL' || status === 'CL') dayEl.classList.add('highlight-leave');
             if(status === 'HO') dayEl.classList.add('holiday-bg');
             
             let worked = (log?.punchIn && log?.punchOut) ? formatDur(log.punchOut - log.punchIn) : "";
             
-            // Render Tags (SAR, Bonus, Leaves)
-            let tag = log?.sarUsed ? "+SAR" : (status==='SL'?"+SL":status==='CL'?"+CL":"");
-            if (log?.bonusMs) tag += ` +${log.bonusMs / 3600000}h Bns`;
+            let tag = log?.sarUsed ? "+SAR" : "";
+            if(log?.leaveType === 'HALF-SL') tag += " +0.5SL";
+            if(log?.leaveType === 'HALF-CL') tag += " +0.5CL";
+            if(status === 'SL' && !log?.leaveType) tag += " +SL";
+            if(status === 'CL' && !log?.leaveType) tag += " +CL";
+            if(log?.bonusMs) tag += ` +${log.bonusMs / 3600000}h Bns`;
 
             dayEl.onclick = () => { selectedDateKey = key; openReg(); };
             dayEl.innerHTML = `
-                ${(log?.isManual || status==='P' || status==='SAR' || status==='SL' || status==='CL') ? '<div class="purple-dot"></div>' : ''}
+                ${(log?.isManual || status==='P' || status==='SAR' || status==='SL' || status==='CL' || log?.leaveType) ? '<div class="purple-dot"></div>' : ''}
                 <span class="day-num">${d}</span>
                 <span class="day-hours">${worked} <span class="tag-bonus">${tag}</span></span>
                 <span class="status-label bg-${status}">${status}</span>
@@ -408,9 +412,12 @@
 
     function refund(log) {
         if (!log) return;
-        if (log.status === 'SL') balances.SL++;
-        if (log.status === 'CL') balances.CL++;
+        if (log.status === 'SL') balances.SL += 1;
+        if (log.status === 'CL') balances.CL += 1;
+        if (log.leaveType === 'HALF-SL') balances.SL += 0.5;
+        if (log.leaveType === 'HALF-CL') balances.CL += 0.5;
         if (log.sarUsed) { balances.SAR++; log.sarUsed = false; }
+        delete log.leaveType;
     }
 
     function openReg() {
@@ -434,37 +441,17 @@
         const d = new Date(selectedDateKey);
         const pIn = new Date(d).setHours(inV.split(':')[0], inV.split(':')[1]);
         const pOut = new Date(d).setHours(outV.split(':')[0], outV.split(':')[1]);
-        
-        const workedMs = pOut - pIn;
-        const bMs = log.bonusMs || 0;
-
-        logs[selectedDateKey] = { 
-            ...log, 
-            punchIn: pIn, 
-            punchOut: pOut, 
-            isManual: true, 
-            status: calculateStatus(workedMs, bMs) 
-        };
+        logs[selectedDateKey] = { ...log, punchIn: pIn, punchOut: pOut, isManual: true, status: calculateStatus(pOut-pIn, log.bonusMs||0) };
         save();
     }
 
     function addBonusHours() {
         const currentBonus = (logs[selectedDateKey]?.bonusMs || 0) / 3600000;
-        const hours = prompt("Enter Bonus Hours provided by company (e.g., 2 or 1.5):", currentBonus);
-        
+        const hours = prompt("Enter Bonus Hours (e.g., 2):", currentBonus);
         if (hours !== null) {
-            let log = logs[selectedDateKey] || { 
-                punchIn: new Date(selectedDateKey).setHours(9,0,0,0), 
-                punchOut: new Date(selectedDateKey).setHours(17,30,0,0),
-                isManual: true 
-            };
-            
-            const bonusMs = parseFloat(hours) * 3600000;
-            log.bonusMs = bonusMs;
-            
-            const workedMs = (log.punchOut && log.punchIn) ? (log.punchOut - log.punchIn) : 0;
-            log.status = calculateStatus(workedMs, bonusMs);
-            
+            let log = logs[selectedDateKey] || { punchIn: new Date(selectedDateKey).setHours(9,0,0,0), punchOut: new Date(selectedDateKey).setHours(17,30,0,0), isManual: true };
+            log.bonusMs = parseFloat(hours) * 3600000;
+            log.status = calculateStatus((log.punchOut-log.punchIn), log.bonusMs);
             logs[selectedDateKey] = log;
             save();
         }
@@ -473,10 +460,7 @@
     function applySAR() {
         const log = logs[selectedDateKey];
         if(!log?.punchOut || (balances.SAR||0) <= 0) return;
-        const workedMs = log.punchOut - log.punchIn;
-        const bMs = log.bonusMs || 0;
-
-        if((workedMs + bMs + SAR_BONUS_MS) >= SHIFT_TIME_MS - 2000) {
+        if((log.punchOut - log.punchIn + (log.bonusMs||0) + SAR_BONUS_MS) >= SHIFT_TIME_MS - 2000) {
             refund(log); balances.SAR--;
             logs[selectedDateKey].status = 'P'; logs[selectedDateKey].sarUsed = true;
             save();
@@ -499,8 +483,18 @@
             refund(log); delete logs[selectedDateKey]; 
         } else {
             refund(log);
-            if((type==='SL'||type==='CL')) { if((balances[type]||0)<=0) return; balances[type]--; }
-            logs[selectedDateKey] = { ...log, status: type };
+            if(type === 'HALF-SL' || type === 'HALF-CL') {
+                const base = type.split('-')[1];
+                if(balances[base] < 0.5) { alert("Insufficient Balance"); return; }
+                balances[base] -= 0.5;
+                logs[selectedDateKey] = { ...log, status: 'HD', leaveType: type };
+            } else if(type==='SL'||type==='CL') {
+                if(balances[type] < 1) { alert("Insufficient Balance"); return; }
+                balances[type] -= 1;
+                logs[selectedDateKey] = { ...log, status: type };
+            } else {
+                logs[selectedDateKey] = { ...log, status: type };
+            }
         }
         save();
     }
@@ -515,25 +509,20 @@
         const now = new Date(), m = now.getMonth(), y = now.getFullYear();
         const days = new Date(y, m + 1, 0).getDate();
         let csv = `Employee: ${profile.name}, Code: ${profile.code}, Report: Monthly Attendance\n`;
-        csv += "Date,Punch In,Punch Out,Worked (Hrs),Bonus (Hrs),Status,Regularization,Holiday,Remarks\n";
-        
+        csv += "Date,Punch In,Punch Out,Worked (Hrs),Bonus (Hrs),Status,Leave Tag,Holiday,Remarks\n";
         for (let i = 1; i <= days; i++) {
             const dStr = new Date(y, m, i).toDateString();
             const log = logs[dStr];
             const isHol = globalHolidays[dStr] || (log?.status === 'HO' ? log.remarks : "");
-            
             const workedMs = (log?.punchIn && log?.punchOut) ? (log.punchOut - log.punchIn) : 0;
-            const bonusHrs = log?.bonusMs ? (log.bonusMs / 3600000).toFixed(1) : "0";
-            const workedHrs = (workedMs / 3600000).toFixed(2);
-
             const row = [
                 i,
                 log?.punchIn ? new Date(log.punchIn).toLocaleTimeString([], {hour12:false, hour:'2-digit', minute:'2-digit'}) : "--",
                 log?.punchOut ? new Date(log.punchOut).toLocaleTimeString([], {hour12:false, hour:'2-digit', minute:'2-digit'}) : "--",
-                log?.punchIn ? workedHrs : "0.00",
-                bonusHrs,
+                (workedMs / 3600000).toFixed(2),
+                (log?.bonusMs ? log.bonusMs / 3600000 : 0).toFixed(1),
                 log?.status || (isHol ? "HO" : "A"),
-                log?.sarUsed ? "SAR" : (log?.status==='SL'?'SL':log?.status==='CL'?'CL':""),
+                log?.leaveType || (log?.sarUsed ? "SAR" : ""),
                 isHol || "--",
                 log?.remarks || ""
             ];
@@ -549,8 +538,8 @@
 
     function formatDur(ms) { let h=Math.floor(ms/3600000), m=Math.floor((ms%3600000)/60000); return `${h}h ${m}m`; }
     function editBalances() { 
-        const sl = prompt("SL:", balances.SL), cl = prompt("CL:", balances.CL), sar = prompt("SAR:", balances.SAR);
-        if(sl!==null) balances.SL=parseInt(sl); if(cl!==null) balances.CL=parseInt(cl); if(sar!==null) balances.SAR=parseInt(sar);
+        const sl = prompt("SL Balance:", balances.SL), cl = prompt("CL Balance:", balances.CL), sar = prompt("SAR Balance:", balances.SAR);
+        if(sl!==null) balances.SL=parseFloat(sl); if(cl!==null) balances.CL=parseFloat(cl); if(sar!==null) balances.SAR=parseFloat(sar);
         save(); 
     }
     function addRemarks() { let r=prompt("Remarks:", logs[selectedDateKey]?.remarks||""); if(r!==null) { logs[selectedDateKey]={...logs[selectedDateKey], remarks:r}; save(); } }
