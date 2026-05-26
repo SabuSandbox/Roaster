@@ -1,0 +1,275 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Aesthetic Shift Tracker</title>
+    <style>
+        :root {
+            --primary: #0a84ff; /* iOS Active Blue */
+            --danger: #ff453a;  /* iOS Destructive Red */
+            --glass-bg: rgba(20, 20, 25, 0.5);
+            --glass-border: rgba(255, 255, 255, 0.08);
+            --btn-dark-glass: rgba(255, 255, 255, 0.07);
+            --btn-dark-glass-hover: rgba(255, 255, 255, 0.12);
+            --text-main: #ffffff;
+            --text-muted: #9898ed; 
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", "Helvetica Neue", Arial, sans-serif;
+            background: radial-gradient(circle at 50% 0%, #2e1065 0%, #0f172a 70%);
+            background-attachment: fixed;
+            color: var(--text-main);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            padding: 20px;
+            box-sizing: border-box;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        .glass-card {
+            background: var(--glass-bg);
+            backdrop-filter: blur(30px) saturate(200%);
+            -webkit-backdrop-filter: blur(30px) saturate(200%);
+            border: 1px solid var(--glass-border);
+            border-radius: 32px;
+            padding: 3rem 2rem 2.5rem 2rem;
+            width: 100%;
+            max-width: 360px;
+            box-shadow: 0 30px 60px rgba(0, 0, 0, 0.6), inset 0 1px 1px rgba(255, 255, 255, 0.1);
+            text-align: center;
+        }
+
+        /* Countdown Area Moved to top with Aesthetic overhaul */
+        .countdown-box {
+            margin-bottom: 2.5rem;
+        }
+
+        #timer {
+            font-size: 4rem;
+            font-weight: 200;
+            letter-spacing: -2px;
+            font-variant-numeric: tabular-nums;
+            margin: 0;
+            background: linear-gradient(180deg, #ffffff 30%, rgba(255, 255, 255, 0.6) 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            text-shadow: 0 4px 20px rgba(255, 255, 255, 0.15);
+            line-height: 1;
+        }
+
+        #infoText {
+            font-size: 0.8rem;
+            color: var(--text-muted);
+            margin: 0.75rem 0 0 0;
+            letter-spacing: 0.5px;
+            text-transform: uppercase;
+            font-weight: 500;
+            opacity: 0.8;
+        }
+
+        .input-group {
+            background: rgba(0, 0, 0, 0.25);
+            border: 1px solid rgba(255, 255, 255, 0.04);
+            border-radius: 16px;
+            padding: 0.85rem 1.25rem;
+            margin-bottom: 1.25rem;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        label {
+            font-size: 0.95rem;
+            font-weight: 400;
+            color: rgba(255, 255, 255, 0.7);
+        }
+
+        input[type="time"] {
+            background: transparent;
+            border: none;
+            color: #ffffff;
+            font-size: 1.1rem;
+            font-weight: 500;
+            font-family: inherit;
+            outline: none;
+            cursor: pointer;
+            text-align: right;
+            -webkit-appearance: none;
+        }
+
+        input[type="time"]::-webkit-calendar-picker-indicator {
+            filter: invert(1);
+            cursor: pointer;
+            margin-left: 5px;
+            opacity: 0.7;
+        }
+
+        /* Action Buttons stack layout */
+        .action-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        /* Dark Glass Punch Button */
+        #punchBtn {
+            width: 100%;
+            padding: 1rem;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 16px;
+            font-size: 1.05rem;
+            font-weight: 500;
+            color: #ffffff;
+            background: var(--btn-dark-glass);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        #punchBtn:hover {
+            background: var(--btn-dark-glass-hover);
+            border-color: rgba(255, 255, 255, 0.2);
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.3);
+        }
+
+        #punchBtn:active {
+            transform: scale(0.98);
+            background: rgba(255, 255, 255, 0.04);
+        }
+
+        /* Reset Button placed below */
+        #resetBtn {
+            background: transparent;
+            border: none;
+            color: rgba(255, 255, 255, 0.4);
+            font-size: 0.9rem;
+            font-weight: 500;
+            cursor: pointer;
+            padding: 0.5rem 1rem;
+            transition: color 0.2s ease, transform 0.1s;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        #resetBtn:hover {
+            color: var(--danger);
+        }
+
+        #resetBtn:active {
+            transform: scale(0.95);
+        }
+    </style>
+</head>
+<body>
+
+<div class="glass-card">
+    <div class="countdown-box">
+        <div id="timer">00:00:00</div>
+        <p id="infoText">Ready to trace shift</p>
+    </div>
+    
+    <div class="input-group">
+        <label for="punchTime">Punch Time</label>
+        <input type="time" id="punchTime" required>
+    </div>
+
+    <div class="action-container">
+        <button id="punchBtn">Punch In</button>
+        <button id="resetBtn">Reset Tracker</button>
+    </div>
+</div>
+
+<script>
+    let countdownInterval;
+
+    window.addEventListener('DOMContentLoaded', () => {
+        const now = new Date();
+        const hours = String(now.getHours()).padStart(2, '0');
+        const minutes = String(now.getMinutes()).padStart(2, '0');
+        document.getElementById('punchTime').value = `${hours}:${minutes}`;
+    });
+
+    document.getElementById('punchBtn').addEventListener('click', startCountdown);
+    document.getElementById('resetBtn').addEventListener('click', resetTracker);
+
+    function startCountdown() {
+        clearInterval(countdownInterval);
+
+        const timeInput = document.getElementById('punchTime').value;
+        if (!timeInput) return;
+
+        const [punchHours, punchMinutes] = timeInput.split(':').map(Number);
+        
+        const now = new Date();
+        const punchDate = new Date();
+        punchDate.setHours(punchHours, punchMinutes, 0, 0);
+
+        const isBeforeCutoff = (punchHours < 10) || (punchHours === 10 && punchMinutes < 30);
+        
+        let shiftHours = 8;
+        let shiftMinutes = isBeforeCutoff ? 15 : 30;
+
+        document.getElementById('infoText').innerText = isBeforeCutoff 
+            ? `Early Pattern • 8h 15m Target` 
+            : `Standard Pattern • 8h 30m Target`;
+            
+        document.getElementById('infoText').style.color = "var(--primary)";
+
+        const targetDate = new Date(punchDate.getTime());
+        targetDate.setHours(targetDate.getHours() + shiftHours);
+        targetDate.setMinutes(targetDate.getMinutes() + shiftMinutes);
+
+        function updateTimer() {
+            const currentTime = new Date();
+            const timeDifference = targetDate - currentTime;
+
+            if (timeDifference <= 0) {
+                clearInterval(countdownInterval);
+                document.getElementById('timer').style.background = "none";
+                document.getElementById('timer').style.webkitTextFillColor = "var(--primary)";
+                document.getElementById('timer').innerText = "00:00:00";
+                document.getElementById('infoText').innerText = "Shift Completed";
+                document.getElementById('infoText').style.color = "#34c759"; // iOS Green
+                return;
+            }
+
+            const hours = Math.floor((timeDifference % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+            const minutes = Math.floor((timeDifference % (1000 * 60 * 60)) / (1000 * 60));
+            const seconds = Math.floor((timeDifference % (1000 * 60)) / 1000);
+
+            document.getElementById('timer').innerText = 
+                `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+        }
+
+        updateTimer();
+        countdownInterval = setInterval(updateTimer, 1000);
+    }
+
+    function resetTracker() {
+        clearInterval(countdownInterval);
+        
+        document.getElementById('timer').style.background = "linear-gradient(180deg, #ffffff 30%, rgba(255, 255, 255, 0.6) 100%)";
+        document.getElementById('timer').style.webkitBackground_clip = "text";
+        document.getElementById('timer').style.webkitTextFillColor = "transparent";
+        
+        document.getElementById('timer').innerText = "00:00:00";
+        document.getElementById('infoText').innerText = "Ready to trace shift";
+        document.getElementById('infoText').style.color = "var(--text-muted)";
+        
+        const now = new Date();
+        const hours = String(now.getHours()).padStart(2, '0');
+        const minutes = String(now.getMinutes()).padStart(2, '0');
+        document.getElementById('punchTime').value = `${hours}:${minutes}`;
+    }
+</script>
+
+</body>
+</html>
