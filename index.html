@@ -7,7 +7,8 @@
     <style>
         :root {
             --primary: #0a84ff; /* iOS Active Blue */
-            --danger: #ff453a;  /* iOS Destructive Red */
+            --danger-trans: rgba(255, 69, 58, 0.65); /* Bold transparent iOS Red */
+            --danger-hover: rgba(255, 69, 58, 1);     /* Full bright on hover */
             --glass-bg: rgba(20, 20, 25, 0.5);
             --glass-border: rgba(255, 255, 255, 0.08);
             --btn-dark-glass: rgba(255, 255, 255, 0.07);
@@ -44,7 +45,7 @@
             text-align: center;
         }
 
-        /* Countdown Area Moved to top with Aesthetic overhaul */
+        /* Countdown Area */
         .countdown-box {
             margin-bottom: 2.5rem;
         }
@@ -114,7 +115,7 @@
             display: flex;
             flex-direction: column;
             align-items: center;
-            gap: 1rem;
+            gap: 1.2rem;
         }
 
         /* Dark Glass Punch Button */
@@ -123,8 +124,8 @@
             padding: 1rem;
             border: 1px solid rgba(255, 255, 255, 0.1);
             border-radius: 16px;
-            font-size: 1.05rem;
-            font-weight: 500;
+            font-size: 1.7rem;
+            font-weight: 700;
             color: #ffffff;
             background: var(--btn-dark-glass);
             backdrop-filter: blur(10px);
@@ -146,25 +147,28 @@
             background: rgba(255, 255, 255, 0.04);
         }
 
-        /* Reset Button placed below */
+        /* Updated Semi-Transparent Bold Red Reset Button */
         #resetBtn {
             background: transparent;
             border: none;
-            color: rgba(255, 255, 255, 0.4);
-            font-size: 0.9rem;
-            font-weight: 500;
+            color: var(--danger-trans);
+            font-size: 1.05rem;
+            font-weight: 900; /* Bold */
+            letter-spacing: 0.5px;
             cursor: pointer;
-            padding: 0.5rem 1rem;
-            transition: color 0.2s ease, transform 0.1s;
+            padding: 0.4rem 1.2rem;
+            transition: all 0.2s ease;
             -webkit-tap-highlight-color: transparent;
         }
 
         #resetBtn:hover {
-            color: var(--danger);
+            color: var(--danger-hover);
+            text-shadow: 0 0 10px rgba(255, 69, 58, 0.3);
         }
 
         #resetBtn:active {
             transform: scale(0.95);
+            opacity: 0.5;
         }
     </style>
 </head>
@@ -173,17 +177,16 @@
 <div class="glass-card">
     <div class="countdown-box">
         <div id="timer">00:00:00</div>
-        <p id="infoText">Ready to trace shift</p>
     </div>
     
     <div class="input-group">
-        <label for="punchTime">Punch Time</label>
+        <label for="punchTime">In Time</label>
         <input type="time" id="punchTime" required>
     </div>
 
     <div class="action-container">
-        <button id="punchBtn">Punch In</button>
-        <button id="resetBtn">Reset Tracker</button>
+        <button id="punchBtn">PUNCH</button>
+        <button id="resetBtn">RESET</button>
     </div>
 </div>
 
@@ -237,7 +240,7 @@
                 document.getElementById('timer').style.webkitTextFillColor = "var(--primary)";
                 document.getElementById('timer').innerText = "00:00:00";
                 document.getElementById('infoText').innerText = "Shift Completed";
-                document.getElementById('infoText').style.color = "#34c759"; // iOS Green
+                document.getElementById('infoText').style.color = "#34c759";
                 return;
             }
 
