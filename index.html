@@ -3,7 +3,17 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Aesthetic Shift Tracker</title>
+    
+    <!-- Application Branding & Web App Headers -->
+    <title>Mint • Shift Tracker</title>
+    <meta name="apple-mobile-web-app-title" content="Mint">
+    <meta name="application-name" content="Mint">
+    <meta name="theme-color" content="#0f172a">
+
+    <!-- Embedded High-Fidelity SVG App Icon & Favicon -->
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Cdefs%3E%3ClinearGradient id='mintGrad' x1='0%25' y1='0%25' x2='100%25' y2='100%25'%3E%3Cstop offset='0%25' stop-color='%2300f5a0'/%3E%3Cstop offset='100%25' stop-color='%2300d9f5'/%3E%3C/linearGradient%3E%3C/defs%3E%3Cpath d='M80,20 C50,20 20,40 20,80 C50,80 80,60 80,20 Z' fill='url(%23mintGrad)'/%3E%3Cpath d='M20,80 C40,55 60,45 80,20' stroke='%23ffffff' stroke-width='4' stroke-linecap='round' opacity='0.4'/%3E%3C/svg%3E">
+    <link rel="apple-touch-icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='22' fill='%23111115'/%3E%3Cdefs%3E%3ClinearGradient id='mintGrad' x1='0%25' y1='0%25' x2='100%25' y2='100%25'%3E%3Cstop offset='0%25' stop-color='%2300f5a0'/%3E%3Cstop offset='100%25' stop-color='%2300d9f5'/%3E%3C/linearGradient%3E%3C/defs%3E%3Cpath d='M75,25 C50,25 25,43 25,75 C50,75 75,57 75,25 Z' fill='url(%23mintGrad)'/%3E%3Cpath d='M25,75 C41,54 59,45 75,25' stroke='%23ffffff' stroke-width='3.5' stroke-linecap='round' opacity='0.35'/%3E%3C/svg%3E">
+
     <style>
         :root {
             --primary: #0a84ff; /* iOS Active Blue */
@@ -14,11 +24,12 @@
             --glass-border: rgba(255, 255, 255, 0.08);
             --text-main: #ffffff;
             --text-muted: rgba(255, 255, 255, 0.4); 
+            --mint-glow: #00f5a0;
         }
 
         body {
             font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", "Helvetica Neue", Arial, sans-serif;
-            background: radial-gradient(circle at 50% 0%, #2e1065 0%, #0f172a 70%);
+            background: radial-gradient(circle at 50% 0%, #064e3b 0%, #0f172a 75%);
             background-attachment: fixed;
             color: var(--text-main);
             display: flex;
@@ -37,11 +48,35 @@
             -webkit-backdrop-filter: blur(30px) saturate(200%);
             border: 1px solid var(--glass-border);
             border-radius: 32px;
-            padding: 3.5rem 2rem 2.5rem 2rem;
+            padding: 2.5rem 2rem 2.5rem 2rem;
             width: 100%;
             max-width: 360px;
             box-shadow: 0 30px 60px rgba(0, 0, 0, 0.6), inset 0 1px 1px rgba(255, 255, 255, 0.1);
             text-align: center;
+        }
+
+        /* Branding Header */
+        .brand-header {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            margin-bottom: 1.5rem;
+        }
+
+        .brand-icon {
+            width: 24px;
+            height: 24px;
+        }
+
+        .brand-name {
+            font-size: 1.2rem;
+            font-weight: 600;
+            letter-spacing: -0.2px;
+            background: linear-gradient(135deg, #ffffff 50%, rgba(255,255,255,0.7) 100%);
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
         }
 
         /* Countdown Area */
@@ -63,7 +98,6 @@
             line-height: 1;
         }
 
-        /* Elegant End Time display */
         #endTimeText {
             font-size: 0.9rem;
             margin: 0.8rem 0 0 0;
@@ -74,7 +108,7 @@
             transition: color 0.3s ease;
         }
 
-        /* Centered Input Panel without text */
+        /* Centered Time Picker container */
         .input-group {
             background: rgba(0, 0, 0, 0.25);
             border: 1px solid rgba(255, 255, 255, 0.04);
@@ -83,14 +117,14 @@
             margin-bottom: 2rem;
             display: flex;
             align-items: center;
-            justify-content: center; /* Perfectly Centered */
+            justify-content: center;
         }
 
         input[type="time"] {
             background: transparent;
             border: none;
             color: #ffffff;
-            font-size: 1.4rem; /* Slightly larger style focus */
+            font-size: 1.4rem;
             font-weight: 500;
             font-family: inherit;
             outline: none;
@@ -106,13 +140,11 @@
             opacity: 0.7;
         }
         
-        /* Disabled Input adjustments */
         input[type="time"]:disabled {
             opacity: 0.5;
             cursor: not-allowed;
         }
 
-        /* Action Buttons stack layout */
         .action-container {
             display: flex;
             flex-direction: column;
@@ -120,7 +152,6 @@
             width: 100%;
         }
 
-        /* Dynamic Transformative Master Button */
         #actionBtn {
             width: 100%;
             padding: 1rem;
@@ -133,7 +164,7 @@
             box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
         }
 
-        /* Mode 1: Green Punch In Style */
+        /* Green Punch Style */
         .btn-punch {
             background-color: var(--success-green);
             color: white;
@@ -146,12 +177,12 @@
             box-shadow: 0 6px 20px rgba(52, 199, 89, 0.25);
         }
 
-        /* Mode 2: Semi-Transparent Bold Red Reset Style */
+        /* Red Reset Style */
         .btn-reset {
             background: rgba(255, 69, 58, 0.06);
             color: var(--danger-trans);
             border: 1px solid rgba(255, 69, 58, 0.2);
-            font-weight: 700; /* Bold */
+            font-weight: 700;
             letter-spacing: 0.3px;
         }
 
@@ -170,18 +201,33 @@
 <body>
 
 <div class="glass-card">
-    <!-- 1. Countdown Section -->
+    <!-- Brand Logo and Name Section -->
+    <div class="brand-header">
+        <svg class="brand-icon" viewBox="0 0 100 100">
+            <defs>
+                <linearGradient id='brandGrad' x1='0%25' y1='0%25' x2='100%25' y2='100%25'%3E
+                    <stop offset='0%25' stop-color='%2300f5a0'/>
+                    <stop offset='100%25' stop-color='%2300d9f5'/>
+                </linearGradient>
+            </defs>
+            <path d='M80,20 C50,20 20,40 20,80 C50,80 80,60 80,20 Z' fill='url(#brandGrad)'/>
+            <path d='M20,80 C40,55 60,45 80,20' stroke='#ffffff' stroke-width='5' stroke-linecap='round' opacity='0.4'/>
+        </svg>
+        <span class="brand-name">Mint</span>
+    </div>
+
+    <!-- Countdown Display -->
     <div class="countdown-box">
         <div id="timer">00:00:00</div>
         <p id="endTimeText"></p>
     </div>
     
-    <!-- 2. Centered Interactive Time Picker -->
+    <!-- Centered Time Selector -->
     <div class="input-group">
         <input type="time" id="punchTime" required>
     </div>
 
-    <!-- 3. Dynamic Interactive Button -->
+    <!-- Action Button -->
     <div class="action-container">
         <button id="actionBtn" class="btn-punch" type="button">Punch In</button>
     </div>
@@ -195,8 +241,6 @@
         initCurrentTime();
         
         const actionBtn = document.getElementById('actionBtn');
-
-        // Combined Touch + Click Engine
         actionBtn.addEventListener('click', handleButtonAction);
         actionBtn.addEventListener('touchstart', function(e) {
             e.preventDefault();
@@ -225,19 +269,19 @@
 
         const [punchHours, punchMinutes] = timeInput.split(':').map(Number);
 
-        // Evaluate 10:30 AM Rule parameters
+        // Evaluate 10:30 AM Rule
         const isBeforeCutoff = (punchHours < 10) || (punchHours === 10 && punchMinutes < 30);
         let totalShiftHours = 8;
         let totalShiftMinutes = isBeforeCutoff ? 15 : 30;
 
-        // Map Target End Time onto today's date structure
+        // Map Target End Time onto today's date
         const targetDate = new Date();
         targetDate.setHours(punchHours + totalShiftHours);
         targetDate.setMinutes(punchMinutes + totalShiftMinutes);
         targetDate.setSeconds(0);
         targetDate.setMilliseconds(0);
 
-        // Render Static End Time Info
+        // Format Target Output Clock Time
         let endHours = targetDate.getHours();
         const endMinutes = String(targetDate.getMinutes()).padStart(2, '0');
         const ampm = endHours >= 12 ? 'PM' : 'AM';
@@ -248,11 +292,9 @@
         endEl.style.color = "var(--text-muted)";
         endEl.style.display = "block";
 
-        // Flip application lock variables
         isCountingDown = true;
-        document.getElementById('punchTime').disabled = true; // Lock Time selector
+        document.getElementById('punchTime').disabled = true;
         
-        // Transform button properties to Red Reset design
         const actionBtn = document.getElementById('actionBtn');
         actionBtn.innerText = "Reset";
         actionBtn.className = "btn-reset";
@@ -261,12 +303,11 @@
             const now = new Date();
             const timeDifferenceInMs = targetDate - now;
 
-            // If shift completed
             if (timeDifferenceInMs <= 0) {
                 clearInterval(countdownInterval);
                 const timerEl = document.getElementById('timer');
                 timerEl.style.background = "none";
-                timerEl.style.webkitTextFillColor = "var(--primary)";
+                timerEl.style.webkitTextFillColor = "var(--success-green)";
                 timerEl.innerText = "00:00:00";
                 
                 endEl.innerText = "Shift Completed";
@@ -289,16 +330,12 @@
     function resetTracker() {
         clearInterval(countdownInterval);
         isCountingDown = false;
-        
-        // Unlock Time selector
         document.getElementById('punchTime').disabled = false;
         
-        // Transform button properties back to Green Punch design
         const actionBtn = document.getElementById('actionBtn');
         actionBtn.innerText = "Punch In";
         actionBtn.className = "btn-punch";
 
-        // Reset display digits
         const timerEl = document.getElementById('timer');
         timerEl.style.background = "linear-gradient(180deg, #ffffff 30%, rgba(255, 255, 255, 0.6) 100%)";
         timerEl.style.webkitBackgroundClip = "text";
