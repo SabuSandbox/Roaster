@@ -7,12 +7,11 @@
     <style>
         :root {
             --primary: #0a84ff; /* iOS Active Blue */
+            --success-green: #34c759; /* iOS Native Vibrant Green */
             --danger-trans: rgba(255, 69, 58, 0.65); /* Bold transparent iOS Red */
             --danger-hover: rgba(255, 69, 58, 1);     /* Full bright on hover */
             --glass-bg: rgba(20, 20, 25, 0.5);
             --glass-border: rgba(255, 255, 255, 0.08);
-            --btn-dark-glass: rgba(255, 255, 255, 0.07);
-            --btn-dark-glass-hover: rgba(255, 255, 255, 0.12);
             --text-main: #ffffff;
             --text-muted: rgba(255, 255, 255, 0.4); 
         }
@@ -75,41 +74,42 @@
             transition: color 0.3s ease;
         }
 
+        /* Centered Input Panel without text */
         .input-group {
             background: rgba(0, 0, 0, 0.25);
             border: 1px solid rgba(255, 255, 255, 0.04);
             border-radius: 16px;
             padding: 0.85rem 1.25rem;
-            margin-bottom: 1.5rem;
+            margin-bottom: 2rem;
             display: flex;
             align-items: center;
-            justify-content: space-between;
-        }
-
-        label {
-            font-size: 0.95rem;
-            font-weight: 400;
-            color: rgba(255, 255, 255, 0.7);
+            justify-content: center; /* Perfectly Centered */
         }
 
         input[type="time"] {
             background: transparent;
             border: none;
             color: #ffffff;
-            font-size: 1.1rem;
+            font-size: 1.4rem; /* Slightly larger style focus */
             font-weight: 500;
             font-family: inherit;
             outline: none;
             cursor: pointer;
-            text-align: right;
+            text-align: center;
             -webkit-appearance: none;
+            width: 100%;
         }
 
         input[type="time"]::-webkit-calendar-picker-indicator {
             filter: invert(1);
             cursor: pointer;
-            margin-left: 5px;
             opacity: 0.7;
+        }
+        
+        /* Disabled Input adjustments */
+        input[type="time"]:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
         }
 
         /* Action Buttons stack layout */
@@ -117,63 +117,53 @@
             display: flex;
             flex-direction: column;
             align-items: center;
-            gap: 1.2rem;
             width: 100%;
         }
 
-        /* Dark Glass Punch Button */
-        #punchBtn {
+        /* Dynamic Transformative Master Button */
+        #actionBtn {
             width: 100%;
             padding: 1rem;
-            border: 1px solid rgba(255, 255, 255, 0.1);
             border-radius: 16px;
             font-size: 1.05rem;
-            font-weight: 500;
-            color: #ffffff;
-            background: var(--btn-dark-glass);
-            backdrop-filter: blur(10px);
-            -webkit-backdrop-filter: blur(10px);
             cursor: pointer;
             transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
             -webkit-tap-highlight-color: transparent;
             display: block;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
         }
 
-        #punchBtn:hover {
-            background: var(--btn-dark-glass-hover);
-            border-color: rgba(255, 255, 255, 0.2);
-            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.3);
+        /* Mode 1: Green Punch In Style */
+        .btn-punch {
+            background-color: var(--success-green);
+            color: white;
+            border: 1px solid rgba(255, 255, 255, 0.1);
         }
 
-        #punchBtn:active {
-            transform: scale(0.98);
-            background: rgba(255, 255, 255, 0.04);
+        .btn-punch:hover {
+            opacity: 0.9;
+            transform: translateY(-1px);
+            box-shadow: 0 6px 20px rgba(52, 199, 89, 0.25);
         }
 
-        /* Semi-Transparent Bold Red Reset Button */
-        #resetBtn {
-            background: transparent;
-            border: none;
+        /* Mode 2: Semi-Transparent Bold Red Reset Style */
+        .btn-reset {
+            background: rgba(255, 69, 58, 0.06);
             color: var(--danger-trans);
-            font-size: 0.95rem;
+            border: 1px solid rgba(255, 69, 58, 0.2);
             font-weight: 700; /* Bold */
             letter-spacing: 0.3px;
-            cursor: pointer;
-            padding: 0.4rem 1.2rem;
-            transition: all 0.2s ease;
-            -webkit-tap-highlight-color: transparent;
-            display: block;
         }
 
-        #resetBtn:hover {
+        .btn-reset:hover {
+            background: rgba(255, 69, 58, 0.15);
             color: var(--danger-hover);
+            border-color: rgba(255, 69, 58, 0.4);
             text-shadow: 0 0 10px rgba(255, 69, 58, 0.3);
         }
 
-        #resetBtn:active {
-            transform: scale(0.95);
-            opacity: 0.5;
+        #actionBtn:active {
+            transform: scale(0.98);
         }
     </style>
 </head>
@@ -186,38 +176,31 @@
         <p id="endTimeText"></p>
     </div>
     
-    <!-- 2. Interactive Input Panel -->
+    <!-- 2. Centered Interactive Time Picker -->
     <div class="input-group">
-        <label for="punchTime">Punch Time</label>
         <input type="time" id="punchTime" required>
     </div>
 
-    <!-- 3. Centered Actions Stack -->
+    <!-- 3. Dynamic Interactive Button -->
     <div class="action-container">
-        <button id="punchBtn" type="button">Punch In</button>
-        <button id="resetBtn" type="button">Reset</button>
+        <button id="actionBtn" class="btn-punch" type="button">Punch In</button>
     </div>
 </div>
 
 <script>
     let countdownInterval;
+    let isCountingDown = false;
 
     window.addEventListener('DOMContentLoaded', () => {
         initCurrentTime();
         
-        const punchBtn = document.getElementById('punchBtn');
-        const resetBtn = document.getElementById('resetBtn');
+        const actionBtn = document.getElementById('actionBtn');
 
-        punchBtn.addEventListener('click', handlePunch);
-        punchBtn.addEventListener('touchstart', function(e) {
+        // Combined Touch + Click Engine
+        actionBtn.addEventListener('click', handleButtonAction);
+        actionBtn.addEventListener('touchstart', function(e) {
             e.preventDefault();
-            handlePunch();
-        }, {passive: false});
-
-        resetBtn.addEventListener('click', handleReset);
-        resetBtn.addEventListener('touchstart', function(e) {
-            e.preventDefault();
-            handleReset();
+            handleButtonAction();
         }, {passive: false});
     });
 
@@ -228,27 +211,33 @@
         document.getElementById('punchTime').value = `${hours}:${minutes}`;
     }
 
-    function handlePunch() {
-        clearInterval(countdownInterval);
+    function handleButtonAction() {
+        if (!isCountingDown) {
+            startCountdown();
+        } else {
+            resetTracker();
+        }
+    }
 
+    function startCountdown() {
         const timeInput = document.getElementById('punchTime').value;
         if (!timeInput) return;
 
         const [punchHours, punchMinutes] = timeInput.split(':').map(Number);
 
-        // 1. Evaluate 10:30 AM Rule parameters
+        // Evaluate 10:30 AM Rule parameters
         const isBeforeCutoff = (punchHours < 10) || (punchHours === 10 && punchMinutes < 30);
         let totalShiftHours = 8;
         let totalShiftMinutes = isBeforeCutoff ? 15 : 30;
 
-        // 2. Map Target End Time onto today's date
+        // Map Target End Time onto today's date structure
         const targetDate = new Date();
         targetDate.setHours(punchHours + totalShiftHours);
         targetDate.setMinutes(punchMinutes + totalShiftMinutes);
         targetDate.setSeconds(0);
         targetDate.setMilliseconds(0);
 
-        // 3. Render Static End Time Info
+        // Render Static End Time Info
         let endHours = targetDate.getHours();
         const endMinutes = String(targetDate.getMinutes()).padStart(2, '0');
         const ampm = endHours >= 12 ? 'PM' : 'AM';
@@ -259,12 +248,20 @@
         endEl.style.color = "var(--text-muted)";
         endEl.style.display = "block";
 
-        // 4. Live Tracking Engine Loop
+        // Flip application lock variables
+        isCountingDown = true;
+        document.getElementById('punchTime').disabled = true; // Lock Time selector
+        
+        // Transform button properties to Red Reset design
+        const actionBtn = document.getElementById('actionBtn');
+        actionBtn.innerText = "Reset";
+        actionBtn.className = "btn-reset";
+
         function updateTimer() {
             const now = new Date();
             const timeDifferenceInMs = targetDate - now;
 
-            // If shift already completed relative to right now
+            // If shift completed
             if (timeDifferenceInMs <= 0) {
                 clearInterval(countdownInterval);
                 const timerEl = document.getElementById('timer');
@@ -273,11 +270,10 @@
                 timerEl.innerText = "00:00:00";
                 
                 endEl.innerText = "Shift Completed";
-                endEl.style.color = "#34c759"; // Success Green
+                endEl.style.color = "var(--success-green)";
                 return;
             }
 
-            // Dynamically break down real remaining time left
             const hoursLeft = Math.floor(timeDifferenceInMs / (1000 * 60 * 60));
             const minutesLeft = Math.floor((timeDifferenceInMs % (1000 * 60 * 60)) / (1000 * 60));
             const secondsLeft = Math.floor((timeDifferenceInMs % (1000 * 60)) / 1000);
@@ -290,9 +286,19 @@
         countdownInterval = setInterval(updateTimer, 1000);
     }
 
-    function handleReset() {
+    function resetTracker() {
         clearInterval(countdownInterval);
+        isCountingDown = false;
         
+        // Unlock Time selector
+        document.getElementById('punchTime').disabled = false;
+        
+        // Transform button properties back to Green Punch design
+        const actionBtn = document.getElementById('actionBtn');
+        actionBtn.innerText = "Punch In";
+        actionBtn.className = "btn-punch";
+
+        // Reset display digits
         const timerEl = document.getElementById('timer');
         timerEl.style.background = "linear-gradient(180deg, #ffffff 30%, rgba(255, 255, 255, 0.6) 100%)";
         timerEl.style.webkitBackgroundClip = "text";
