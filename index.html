@@ -180,16 +180,19 @@
 <body>
 
 <div class="glass-card">
+    <!-- 1. Countdown Section -->
     <div class="countdown-box">
         <div id="timer">00:00:00</div>
         <p id="endTimeText"></p>
     </div>
     
+    <!-- 2. Interactive Input Panel -->
     <div class="input-group">
         <label for="punchTime">Punch Time</label>
         <input type="time" id="punchTime" required>
     </div>
 
+    <!-- 3. Centered Actions Stack -->
     <div class="action-container">
         <button id="punchBtn" type="button">Punch In</button>
         <button id="resetBtn" type="button">Reset</button>
@@ -198,7 +201,6 @@
 
 <script>
     let countdownInterval;
-    let remainingSeconds = 0;
 
     window.addEventListener('DOMContentLoaded', () => {
         initCurrentTime();
@@ -234,32 +236,36 @@
 
         const [punchHours, punchMinutes] = timeInput.split(':').map(Number);
 
-        // Evaluate 10:30 AM Rule
+        // 1. Evaluate 10:30 AM Rule parameters
         const isBeforeCutoff = (punchHours < 10) || (punchHours === 10 && punchMinutes < 30);
-        
         let totalShiftHours = 8;
         let totalShiftMinutes = isBeforeCutoff ? 15 : 30;
-        
-        remainingSeconds = (totalShiftHours * 3600) + (totalShiftMinutes * 60);
 
-        // Calculate and format target over-time destination clock
-        const calculatedEnd = new Date();
-        calculatedEnd.setHours(punchHours + totalShiftHours);
-        calculatedEnd.setMinutes(punchMinutes + totalShiftMinutes);
+        // 2. Map Target End Time onto today's date
+        const targetDate = new Date();
+        targetDate.setHours(punchHours + totalShiftHours);
+        targetDate.setMinutes(punchMinutes + totalShiftMinutes);
+        targetDate.setSeconds(0);
+        targetDate.setMilliseconds(0);
 
-        let endHours = calculatedEnd.getHours();
-        const endMinutes = String(calculatedEnd.getMinutes()).padStart(2, '0');
+        // 3. Render Static End Time Info
+        let endHours = targetDate.getHours();
+        const endMinutes = String(targetDate.getMinutes()).padStart(2, '0');
         const ampm = endHours >= 12 ? 'PM' : 'AM';
-        endHours = endHours % 12;
-        endHours = endHours ? endHours : 12; // Handle midnight/noon string states cleanly
+        endHours = endHours % 12 || 12;
 
         const endEl = document.getElementById('endTimeText');
         endEl.innerText = `Ends at ${String(endHours).padStart(2, '0')}:${endMinutes} ${ampm}`;
         endEl.style.color = "var(--text-muted)";
         endEl.style.display = "block";
 
+        // 4. Live Tracking Engine Loop
         function updateTimer() {
-            if (remainingSeconds <= 0) {
+            const now = new Date();
+            const timeDifferenceInMs = targetDate - now;
+
+            // If shift already completed relative to right now
+            if (timeDifferenceInMs <= 0) {
                 clearInterval(countdownInterval);
                 const timerEl = document.getElementById('timer');
                 timerEl.style.background = "none";
@@ -271,14 +277,13 @@
                 return;
             }
 
-            const hours = Math.floor(remainingSeconds / 3600);
-            const minutes = Math.floor((remainingSeconds % 3600) / 60);
-            const seconds = remainingSeconds % 60;
+            // Dynamically break down real remaining time left
+            const hoursLeft = Math.floor(timeDifferenceInMs / (1000 * 60 * 60));
+            const minutesLeft = Math.floor((timeDifferenceInMs % (1000 * 60 * 60)) / (1000 * 60));
+            const secondsLeft = Math.floor((timeDifferenceInMs % (1000 * 60)) / 1000);
 
             document.getElementById('timer').innerText = 
-                `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
-            
-            remainingSeconds--;
+                `${String(hoursLeft).padStart(2, '0')}:${String(minutesLeft).padStart(2, '0')}:${String(secondsLeft).padStart(2, '0')}`;
         }
 
         updateTimer();
@@ -287,7 +292,6 @@
 
     function handleReset() {
         clearInterval(countdownInterval);
-        remainingSeconds = 0;
         
         const timerEl = document.getElementById('timer');
         timerEl.style.background = "linear-gradient(180deg, #ffffff 30%, rgba(255, 255, 255, 0.6) 100%)";
