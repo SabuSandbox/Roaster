@@ -72,6 +72,7 @@
             text-transform: uppercase;
             font-weight: 500;
             opacity: 0.8;
+            transition: color 0.3s ease;
         }
 
         .input-group {
@@ -179,16 +180,19 @@
 <body>
 
 <div class="glass-card">
+    <!-- 1. Countdown Section -->
     <div class="countdown-box">
         <div id="timer">00:00:00</div>
         <p id="infoText">Ready to trace shift</p>
     </div>
     
+    <!-- 2. Interactive Input Panel -->
     <div class="input-group">
         <label for="punchTime">Punch Time</label>
         <input type="time" id="punchTime" required>
     </div>
 
+    <!-- 3. Centered Actions Stack -->
     <div class="action-container">
         <button id="punchBtn" type="button">Punch In</button>
         <button id="resetBtn" type="button">Reset</button>
@@ -197,16 +201,14 @@
 
 <script>
     let countdownInterval;
+    let remainingSeconds = 0;
 
-    // Secure load mechanism
     window.addEventListener('DOMContentLoaded', () => {
         initCurrentTime();
         
         const punchBtn = document.getElementById('punchBtn');
         const resetBtn = document.getElementById('resetBtn');
 
-        // Added touchstart event bindings alongside traditional click listeners 
-        // to completely eliminate tap delays/deadzones on smart-devices
         punchBtn.addEventListener('click', handlePunch);
         punchBtn.addEventListener('touchstart', function(e) {
             e.preventDefault();
@@ -234,31 +236,24 @@
         if (!timeInput) return;
 
         const [punchHours, punchMinutes] = timeInput.split(':').map(Number);
-        
-        const now = new Date();
-        const punchDate = new Date();
-        punchDate.setHours(punchHours, punchMinutes, 0, 0);
 
+        // Evaluate the 10:30 AM Cutoff Rule purely from the user's input value
         const isBeforeCutoff = (punchHours < 10) || (punchHours === 10 && punchMinutes < 30);
         
-        let shiftHours = 8;
-        let shiftMinutes = isBeforeCutoff ? 15 : 30;
+        // Calculate raw shift duration in total seconds
+        let totalShiftHours = 8;
+        let totalShiftMinutes = isBeforeCutoff ? 15 : 30;
+        
+        remainingSeconds = (totalShiftHours * 3600) + (totalShiftMinutes * 60);
 
+        // Update Text Status
         document.getElementById('infoText').innerText = isBeforeCutoff 
             ? `Early Pattern • 8h 15m Target` 
             : `Standard Pattern • 8h 30m Target`;
-            
         document.getElementById('infoText').style.color = "var(--primary)";
 
-        const targetDate = new Date(punchDate.getTime());
-        targetDate.setHours(targetDate.getHours() + shiftHours);
-        targetDate.setMinutes(targetDate.getMinutes() + shiftMinutes);
-
         function updateTimer() {
-            const currentTime = new Date();
-            const timeDifference = targetDate - currentTime;
-
-            if (timeDifference <= 0) {
+            if (remainingSeconds <= 0) {
                 clearInterval(countdownInterval);
                 const timerEl = document.getElementById('timer');
                 timerEl.style.background = "none";
@@ -267,16 +262,19 @@
                 
                 const infoEl = document.getElementById('infoText');
                 infoEl.innerText = "Shift Completed";
-                infoEl.style.color = "#34c759";
+                infoEl.style.color = "#34c759"; // Success Green
                 return;
             }
 
-            const hours = Math.floor((timeDifference % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
-            const minutes = Math.floor((timeDifference % (1000 * 60 * 60)) / (1000 * 60));
-            const seconds = Math.floor((timeDifference % (1000 * 60)) / 1000);
+            // Math execution from absolute tracking scope
+            const hours = Math.floor(remainingSeconds / 3600);
+            const minutes = Math.floor((remainingSeconds % 3600) / 60);
+            const seconds = remainingSeconds % 60;
 
             document.getElementById('timer').innerText = 
                 `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+            
+            remainingSeconds--;
         }
 
         updateTimer();
@@ -285,6 +283,7 @@
 
     function handleReset() {
         clearInterval(countdownInterval);
+        remainingSeconds = 0;
         
         const timerEl = document.getElementById('timer');
         timerEl.style.background = "linear-gradient(180deg, #ffffff 30%, rgba(255, 255, 255, 0.6) 100%)";
